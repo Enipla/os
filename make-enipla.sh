@@ -6,12 +6,18 @@
 set -e
 
 # Variables
-REPO_URL="https://github.com/Sectly/Enipla.git"
+REPO_URL="https://github.com/Enipla/aports.git"
 BRANCH="3.20-stable"
 ISO_OUTPUT_DIR="/tmp/enipla-output"
 ISO_NAME="enipla.iso"
-LOGO_PATH="./enipla-logo.png"  # Change to the path of your custom logo
-BACKGROUND_PATH="./enipla-background.png"  # Change to the path of your custom background
+LOGO_PATH="./enipla_logo_brand.png"
+BACKGROUND_PATH="./enipla_background.png"
+ICON_PATH="./enipla_logo_icon.png"
+ICON_TRANSPARENT_PATH="./enipla_logo_icon_transparent.png"
+HD_LOGO_PATH="./hd_enipla_logo_brand.png"
+HD_LOGO_TRANSPARENT_PATH="./hd_enipla_logo_brand_transparent.png"
+HD_ICON_PATH="./hd_enipla_logo_icon.png"
+HD_ICON_TRANSPARENT_PATH="./hd_enipla_logo_icon_transparent.png"
 CUSTOM_NAME="Enipla"
 
 # Clone the repository
@@ -39,22 +45,30 @@ sudo apk update
 sudo apk add $DEFAULT_PACKAGES
 
 # Branding Customizations
-# 1. Change Login Logo
-echo "Setting custom logo..."
-sudo cp $LOGO_PATH /usr/share/pixmaps/enipla-logo.png
-# Update LightDM or other login managers to use the new logo
+# 1. Change Login Logo and Icons
+echo "Setting custom logos and icons..."
+sudo cp "$LOGO_PATH" /usr/share/pixmaps/enipla_logo_brand.png
+sudo cp "$ICON_PATH" /usr/share/icons/enipla_logo_icon.png
+sudo cp "$ICON_TRANSPARENT_PATH" /usr/share/icons/enipla_logo_icon_transparent.png
+sudo cp "$HD_LOGO_PATH" /usr/share/pixmaps/hd_enipla_logo_brand.png
+sudo cp "$HD_LOGO_TRANSPARENT_PATH" /usr/share/pixmaps/hd_enipla_logo_brand_transparent.png
+sudo cp "$HD_ICON_PATH" /usr/share/icons/hd_enipla_logo_icon.png
+sudo cp "$HD_ICON_TRANSPARENT_PATH" /usr/share/icons/hd_enipla_logo_icon_transparent.png
+
+# Update LightDM or other login managers to use the new background
 LIGHTDM_CONF="/etc/lightdm/lightdm-gtk-greeter.conf"
-if [ -f $LIGHTDM_CONF ]; then
-    sudo sed -i "s|#background=.*|background=$BACKGROUND_PATH|" $LIGHTDM_CONF
+if [ -f "$LIGHTDM_CONF" ]; then
+    echo "Setting LightDM background..."
+    sudo sed -i "s|#background=.*|background=$BACKGROUND_PATH|" "$LIGHTDM_CONF"
 fi
 
 # 2. Set Custom Desktop Background
 echo "Setting custom desktop background..."
 sudo mkdir -p /usr/share/backgrounds
-sudo cp $BACKGROUND_PATH /usr/share/backgrounds/enipla-background.png
+sudo cp "$BACKGROUND_PATH" /usr/share/backgrounds/enipla_background.png
 # Configure XFCE to use the custom background by default
 XFCE_DESKTOP_CONF="/usr/share/xfce4/backdrops/default.png"
-sudo ln -sf /usr/share/backgrounds/enipla-background.png $XFCE_DESKTOP_CONF
+sudo ln -sf /usr/share/backgrounds/enipla_background.png "$XFCE_DESKTOP_CONF"
 
 # Ensure services start at boot
 echo "Configuring services to start on boot..."

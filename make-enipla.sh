@@ -1,96 +1,73 @@
 #!/bin/bash
 
-# Script to set up an Alpine VM image with customizations for Enipla Linux, including a desktop environment
+# Set variables for customization
+DISTRO_NAME="Enipla"
+ISO_OUTPUT="enipla_custom.iso"
+CHROOT_DIR="./chroot"
+FLATPAK_APPS=("com.brave.Browser") # Add more app IDs as needed
+BRANDING_IMAGES=("enipla_background.png" "enipla_logo_brand.png" "enipla_logo_brand_transparent.png" "enipla_logo_icon.png" "enipla_logo_icon_transparent.png")
 
-# Exit immediately if any command fails
-set -e
-
-# Install dependencies on Debian/Ubuntu
-echo "Installing dependencies..."
+# Step 0: Install all required packages
+echo "Installing required packages..."
 sudo apt update
-sudo apt install -y proot wget git xorriso curl openssl qemu-utils
+sudo apt install -y debootstrap grub-pc-bin grub-common grub2-common xorriso mtools squashfs-tools chroot lightdm enlightenment flatpak neofetch
 
-# Variables
-OS_REPO="https://github.com/Enipla/os"  # Repository containing OS files (images, etc.)
-ISO_OUTPUT_DIR="$(pwd)/enipla-output"
-ISO_NAME="enipla.iso"
-CUSTOM_NAME="Enipla"
-REPOSITORY_URL="http://dl-cdn.alpinelinux.org/alpine"  # Base URL for the Alpine repository
-ALPINE_MAKE_VM_IMAGE_URL="https://raw.githubusercontent.com/alpinelinux/alpine-make-vm-image/refs/heads/master/alpine-make-vm-image"
+# Step 1: Setup working directories
+mkdir -p "$CHROOT_DIR"
 
-# Generate signing keys
-echo "Generating signing keys..."
-openssl req -new -x509 -days 3650 -nodes -out enipla-cert.pem -keyout enipla-key.pem -subj "/CN=Enipla Kernel Signing"
+# Step 2: Bootstrap a minimal Debian system
+debootstrap --arch=amd64 stable "$CHROOT_DIR" http://deb.debian.org/debian/
 
-# Download alpine-make-vm-image tool
-if [ ! -f "alpine-make-vm-image" ]; then
-    echo "Downloading alpine-make-vm-image..."
-    wget -O alpine-make-vm-image $ALPINE_MAKE_VM_IMAGE_URL
-    chmod +x alpine-make-vm-image
-fi
+# Step 3: Chroot into environment to customize it
+mount --bind /dev "$CHROOT_DIR/dev"
+mount --bind /proc "$CHROOT_DIR/proc"
+mount --bind /sys "$CHROOT_DIR/sys"
 
-# Clone the OS resources repository
-if [ ! -d 'os' ]; then
-    echo 'Cloning Enipla OS repository...'
-    git clone $OS_REPO os
-fi
+# Copy necessary files to chroot for branding (you should replace paths as appropriate)
+cp ${BRANDING_IMAGES[@]} "$CHROOT_DIR/etc/skel/"
 
-# Define a customization script for Enipla Linux
-cat << 'EOF' > enipla-customize.sh
-#!/bin/sh
+# Enter chroot
+chroot "$CHROOT_DIR" /bin/bash <<EOF
 
-# Add XFCE desktop environment, network management tools, and additional utilities
-apk add --no-cache xfce4 xfce4-terminal thunar firefox mousepad vlc evince ristretto file-roller networkmanager networkmanager-applet htop gparted xfce4-power-manager lightdm lightdm-gtk-greeter dbus
+# Basic setup inside chroot
+export DEBIAN_FRONTEND=noninteractive
+apt update
+apt upgrade -y
 
-# Enable necessary services
-rc-update add dbus
-rc-update add lightdm
-rc-update add NetworkManager
+# Install Enlightenment Desktop Environment, flatpak, neofetch, and other essentials
+apt install -y enlightenment flatpak neofetch grub-pc xorg xserver-xorg lightdm
 
-# Set custom branding
-echo "Setting custom branding for Enipla..."
-echo "PRETTY_NAME=\"$CUSTOM_NAME 3.20\"" > /etc/os-release
-echo "NAME=\"$CUSTOM_NAME\"" >> /etc/os-release
-echo "ID=enipla" >> /etc/os-release
+# Configure LightDM (you can set this up to autologin if needed)
+echo "[Seat:*]
+autologin-user=$(whoami)" >> /etc/lightdm/lightdm.conf
 
-# Copy branding assets
-echo "Copying Enipla branding assets..."
-mkdir -p /usr/share/pixmaps /usr/share/backgrounds /etc/lightdm
+# Set up Flatpak and add Flathub repo
+flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
 
-# Copy background and logo if available
-if [ -f /mnt/data/os/enipla_background.png ]; then
-    cp /mnt/data/os/enipla_background.png /usr/share/backgrounds/enipla_background.png
-else
-    echo "Background image not found."
-fi
+# Install specified Flatpak applications
+for app in ${FLATPAK_APPS[@]}; do
+    flatpak install -y flathub \$app
+done
 
-if [ -f /mnt/data/os/hd_enipla_logo_icon_transparent.png ]; then
-    cp /mnt/data/os/hd_enipla_logo_icon_transparent.png /usr/share/pixmaps/enipla_logo.png
-else
-    echo "Logo image not found."
-fi
+# Set branding images as default background, logo, etc.
+cp /etc/skel/enipla_background.png /usr/share/backgrounds/default_background.png
+cp /etc/skel/enipla_logo_icon.png /usr/share/pixmaps/debian-logo.png
 
-# Update lightdm configuration for background
-if [ -f /etc/lightdm/lightdm-gtk-greeter.conf ]; then
-    echo "background=/usr/share/backgrounds/enipla_background.png" >> /etc/lightdm/lightdm-gtk-greeter.conf
-fi
-EOF
-
-# Make the customization script executable
-chmod +x enipla-customize.sh
-
-# Run alpine-make-vm-image to create the Enipla image with GUI
-./alpine-make-vm-image \
-    -m "$REPOSITORY_URL" \
-    -b "v3.20" \
-    -s 2G \
-    -f raw \
-    -p "alpine-base openrc" \
-    -a x86_64 \
-    "$ISO_OUTPUT_DIR/$ISO_NAME" \
-    ./enipla-customize.sh
+# Install any additional configurations for Enlightenment here
 
 # Clean up
-rm enipla-customize.sh
+apt clean
+rm -rf /tmp/* /var/tmp/*
 
-echo "ISO created at $ISO_OUTPUT_DIR/$ISO_NAME"
+EOF
+
+# Exit chroot and unmount
+umount -lf "$CHROOT_DIR/dev"
+umount -lf "$CHROOT_DIR/proc"
+umount -lf "$CHROOT_DIR/sys"
+
+# Step 4: Generate the ISO
+mkdir -p iso/boot/grub
+grub-mkrescue -o "$ISO_OUTPUT" iso
+
+echo "ISO created: $ISO_OUTPUT"

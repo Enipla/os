@@ -12,7 +12,7 @@ sudo apt install -y proot wget git xorriso curl openssl qemu-utils
 
 # Variables
 OS_REPO="https://github.com/Enipla/os"  # Repository containing OS files (images, etc.)
-ISO_OUTPUT_DIR="/tmp/enipla-output"
+ISO_OUTPUT_DIR="$(pwd)/enipla-output"
 ISO_NAME="enipla.iso"
 CUSTOM_NAME="Enipla"
 REPOSITORY_URL="http://dl-cdn.alpinelinux.org/alpine"  # Base URL for the Alpine repository

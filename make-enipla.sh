@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# Check for root privileges
+if [[ $EUID -eq 0 ]]; then
+   echo "This script should not be run as root." 
+   exit 1
+fi
+
 # Set variables for customization
 DISTRO_NAME="Enipla"
 ISO_OUTPUT="enipla_custom.iso"
@@ -7,10 +13,10 @@ CHROOT_DIR="./chroot"
 FLATPAK_APPS=("com.brave.Browser") # Add more app IDs as needed
 BRANDING_IMAGES=("enipla_background.png" "enipla_logo_brand.png" "enipla_logo_brand_transparent.png" "enipla_logo_icon.png" "enipla_logo_icon_transparent.png")
 
-# Step 0: Install all required packages
+# Step 0: Install all required packages, including proot for non-root chroot-like environment
 echo "Installing required packages..."
 sudo apt update
-sudo apt install -y debootstrap grub-pc-bin grub-common grub2-common xorriso mtools squashfs-tools chroot lightdm enlightenment flatpak neofetch
+sudo apt install -y proot debootstrap grub-pc-bin grub-common grub2-common xorriso mtools squashfs-tools lightdm enlightenment flatpak neofetch
 
 # Step 1: Setup working directories
 mkdir -p "$CHROOT_DIR"
@@ -18,18 +24,15 @@ mkdir -p "$CHROOT_DIR"
 # Step 2: Bootstrap a minimal Debian system
 debootstrap --arch=amd64 stable "$CHROOT_DIR" http://deb.debian.org/debian/
 
-# Step 3: Chroot into environment to customize it
-mount --bind /dev "$CHROOT_DIR/dev"
-mount --bind /proc "$CHROOT_DIR/proc"
-mount --bind /sys "$CHROOT_DIR/sys"
-
-# Copy necessary files to chroot for branding (you should replace paths as appropriate)
+# Step 3: Use proot to enter environment and customize
+# Copy necessary files for branding
+mkdir -p "$CHROOT_DIR/etc/skel"
 cp ${BRANDING_IMAGES[@]} "$CHROOT_DIR/etc/skel/"
 
-# Enter chroot
-chroot "$CHROOT_DIR" /bin/bash <<EOF
+# Enter proot environment for customization
+proot -R "$CHROOT_DIR" /bin/bash <<EOF
 
-# Basic setup inside chroot
+# Basic setup inside proot environment
 export DEBIAN_FRONTEND=noninteractive
 apt update
 apt upgrade -y
@@ -53,18 +56,11 @@ done
 cp /etc/skel/enipla_background.png /usr/share/backgrounds/default_background.png
 cp /etc/skel/enipla_logo_icon.png /usr/share/pixmaps/debian-logo.png
 
-# Install any additional configurations for Enlightenment here
-
 # Clean up
 apt clean
 rm -rf /tmp/* /var/tmp/*
 
 EOF
-
-# Exit chroot and unmount
-umount -lf "$CHROOT_DIR/dev"
-umount -lf "$CHROOT_DIR/proc"
-umount -lf "$CHROOT_DIR/sys"
 
 # Step 4: Generate the ISO
 mkdir -p iso/boot/grub

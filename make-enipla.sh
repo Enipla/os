@@ -21,9 +21,9 @@ HD_ICON_TRANSPARENT_PATH="./hd_enipla_logo_icon_transparent.png"
 CUSTOM_NAME="Enipla"
 
 # Clone the repository
-echo "Cloning Enipla repository..."
+echo "Cloning Enipla repository... (Enipla/aports)"
 git clone $REPO_URL
-cd Enipla
+cd aports
 
 # Checkout the 3.20-stable branch
 echo "Switching to branch $BRANCH..."

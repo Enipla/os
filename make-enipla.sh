@@ -40,6 +40,17 @@ echo "cp $LOGO_PATH rootfs/usr/share/pixmaps/" >> "$MKIMAGE_SCRIPT"
 echo "cp $BACKGROUND_PATH rootfs/usr/share/backgrounds/" >> "$MKIMAGE_SCRIPT"
 echo "echo \"background=/usr/share/backgrounds/enipla_background.png\" >> /etc/lightdm/lightdm-gtk-greeter.conf" >> "$MKIMAGE_SCRIPT"
 
+# Update OS Information (os-release)
+echo "Updating OS information to 'Enipla' in os-release..."
+echo "echo 'NAME=\"$CUSTOM_NAME\"' >> rootfs/etc/os-release" >> "$MKIMAGE_SCRIPT"
+echo "echo 'ID=enipla' >> rootfs/etc/os-release" >> "$MKIMAGE_SCRIPT"
+echo "echo 'PRETTY_NAME=\"$CUSTOM_NAME 3.20\"' >> rootfs/etc/os-release" >> "$MKIMAGE_SCRIPT"
+
+# Update bootloader configuration if necessary
+echo "Updating bootloader configurations..."
+echo "sed -i 's/Alpine/$CUSTOM_NAME/g' rootfs/boot/grub/grub.cfg" >> "$MKIMAGE_SCRIPT"
+echo "sed -i 's/Alpine/$CUSTOM_NAME/g' rootfs/boot/syslinux/syslinux.cfg" >> "$MKIMAGE_SCRIPT"
+
 # Step 3: Ensure LightDM and NetworkManager are enabled on boot
 echo "Configuring LightDM and NetworkManager to start on boot..."
 echo "rc-update add lightdm" >> "$MKIMAGE_SCRIPT"

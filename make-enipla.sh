@@ -9,7 +9,7 @@ fi
 # Set up directories
 BUILD_DIR="enipla-live"
 ISO_NAME="enipla_custom.iso"
-BRANDING_IMAGES=("enipla_background.png" "enipla_logo_icon.png")
+BRANDING_IMAGES=("enipla_background.png" "hd_enipla_logo_brand_transparent.png")
 
 # Install necessary packages
 echo "Installing required packages..."

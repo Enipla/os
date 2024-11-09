@@ -1,6 +1,4 @@
 # Enipla
-Enipla, An os powered by hopes and dreams based on: Alpine Linux Stable
+Enipla, An os powered by hopes and dreams based on: Debian Bookworm
 
-Using https://github.com/Enipla/aports as the core that repo is a mirror of the Alpine Linux build scripts, We use that repo for source code this repo only contains the build scripts, tools, software & files to build the Enipla iso file.
-
-Download builded .iso from: https://filetransfer.io/data-package/GxbZ3rWu#link
+Using https://github.com/Enipla/Lilidog-Mirror as the core that repo is a mirror of the Lilidog Minimal for bookworm, We use that repo for source code this repo only contains the build scripts, tools, software & files to build the Enipla iso file.

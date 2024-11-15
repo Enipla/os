@@ -54,11 +54,31 @@ else
     echo "Warning: Calamares branding directory not found."
 fi
 
+# Clean up previous build artifacts
+echo "Cleaning up previous builds..."
+sudo lb clean
+
+# Configure live-build for the Enipla OS ISO
+echo "Configuring live-build for Enipla..."
+sudo lb config \
+    --architecture amd64 \
+    --distribution bookworm \
+    --archive-areas "main contrib non-free non-free-firmware" \
+    --debian-installer live \
+    --debian-installer-distribution bookworm \
+    --firmware-binary true \
+    --firmware-chroot true \
+    --security true \
+    --memtest memtest86+ \
+    --iso-application "Enipla OS" \
+    --iso-publisher "Enipla GNU/Linux" \
+    --iso-volume "Enipla OS 1.0" \
+    --system live \
+    --quiet
+
 # Build the ISO
 echo "Building the Enipla OS ISO..."
-sudo lb clean  # Clean previous builds
-sudo lb config  # Configure the live-build
-sudo lb build   # Build the ISO
+sudo lb build
 
 # Notify the user of completion
 if [ -f "./live-image-amd64.hybrid.iso" ]; then

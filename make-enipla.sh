@@ -19,6 +19,12 @@ echo "Replacing images with Enipla background while retaining original names..."
 cp "$ENIPLA_BACKGROUND" "config/includes.chroot_after_packages/usr/share/backgrounds/wallpapers/Pawprints.jpg"
 cp "$ENIPLA_BACKGROUND" "config/includes.chroot_after_packages/usr/share/backgrounds/grub-bg/Lili-Plain.png"
 cp "$ENIPLA_BACKGROUND" "config/includes.chroot_after_packages/boot/grub/Ozarkdog-grub.png"
+cp "$ENIPLA_BACKGROUND" "config/includes.chroot_after_packages/usr/share/backgrounds/grub-bg/Brown-paw.png"
+
+# Replace specific logos with hd_enipla_logo_brand_transparent.png but keep the original filenames
+echo "Replacing logos with Enipla logo while retaining original names..."
+cp "$ENIPLA_LOGO" "config/includes.installer/usr/share/graphics/logo_debian_dark.png"
+cp "$ENIPLA_LOGO" "config/includes.installer/usr/share/graphics/logo_debian.png"
 
 # Update user-facing OS name from Lilidog to Enipla in specific files
 echo "Updating specified files to display 'Enipla' instead of 'Lilidog'..."

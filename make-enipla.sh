@@ -11,12 +11,6 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 LOGO_PATH="$SCRIPT_DIR/hd_enipla_logo_icon_transparent.png"
 BACKGROUND_PATH="$SCRIPT_DIR/enipla_background.png"
 
-# Update package lists
-apt-get update
-
-# Install LXQT, LXQT Core, LightDM and NeoFetch
-apt-get install -y lxqt lxqt-core lightdm neofetch
-
 # --- Branding changes ---
 
 # Edit /etc/motd
@@ -35,6 +29,12 @@ sed -i "s/NAME=\"Debian GNU\\/Linux/NAME=\"Enipla Begone/g" /etc/os-release
 # Change hostname
 echo "enipla" > /etc/hostname
 hostnamectl set-hostname enipla
+
+# Update package lists
+apt-get update
+
+# Install LXQT, LXQT Core, LightDM and NeoFetch
+apt-get install -y lxqt lxqt-core lightdm neofetch
 
 # --- LightDM Configuration ---
 # Set the background image

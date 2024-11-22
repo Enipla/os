@@ -28,9 +28,9 @@ echo "An OS powered by hopes and dreams" >> /etc/motd
 sed -i "s/Debian GNU\/Linux/Enipla Begone/g" /etc/issue
 
 # Edit /etc/os-release
-sed -i "s/Debian GNU\/Linux/Enipla Begone/g" /etc/os-release
-sed -i "s/PRETTY_NAME=\"Debian GNU\/Linux/PRETTY_NAME=\"Enipla Begone/g" /etc/os-release
-sed -i "s/NAME=\"Debian GNU\/Linux/NAME=\"Enipla Begone/g" /etc/os-release
+sed -i "s/Debian GNU\\/Linux/Enipla Begone/g" /etc/os-release
+sed -i "s/PRETTY_NAME=\"Debian GNU\\/Linux/PRETTY_NAME=\"Enipla Begone/g" /etc/os-release
+sed -i "s/NAME=\"Debian GNU\\/Linux/NAME=\"Enipla Begone/g" /etc/os-release
 
 # Change hostname
 echo "enipla" > /etc/hostname

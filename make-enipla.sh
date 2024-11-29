@@ -38,7 +38,6 @@ echo "enipla" > /etc/hostname
 sed -i "s/127.0.1.1.*/127.0.1.1   enipla/g" /etc/hosts
 
 # Update and upgrade system
-export DEBIAN_FRONTEND=noninteractive
 apt-get update && apt-get dist-upgrade -y
 
 # Install Core System Tools and Utilities

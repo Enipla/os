@@ -43,10 +43,7 @@ apt-get update && apt-get dist-upgrade -y
 
 # Install Core System Tools and Utilities
 apt-get install -y openssh-server sudo screen iproute resolvconf \
-    build-essential tcpdump vlan mii-diag firehol apticron atsar ethtool \
-    denyhosts rdist bzip2 xclip etckeeper git-core less unzip mtr-tiny curl \
-    gdebi-core xbase-clients rsync psmisc iperf lshw wget pastebinit nmap scapy \
-    vim nano
+    build-essential vim nano less unzip mtr-tiny curl etckeeper
 
 # Install Openbox, LightDM and Utilities
 apt-get install -y openbox lightdm lightdm-gtk-greeter xterm pcmanfm tint2 neofetch \

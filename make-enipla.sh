@@ -47,7 +47,7 @@ apt-get install -y openssh-server sudo screen iproute resolvconf \
 
 # Install Openbox, LightDM and Utilities
 apt-get install -y openbox lightdm lightdm-gtk-greeter xterm pcmanfm tint2 neofetch \
-    feh xcompmgr firefox-esr vlc gedit
+    feh xcompmgr vlc gedit
 
 # --- Copy logo and background to global locations ---
 mkdir -p /usr/share/backgrounds /usr/share/icons

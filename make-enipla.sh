@@ -52,6 +52,8 @@ apt-get update && apt-get dist-upgrade -y
 apt-get install -y openbox lightdm lightdm-gtk-greeter xterm pcmanfm tint2 neofetch feh xcompmgr firefox-esr vlc gedit
 
 # --- Copy logo and background to global locations ---
+mkdir -p /usr/share/backgrounds
+mkdir -p /usr/share/icons
 cp "$LOGO_PATH" /usr/share/icons/enipla_logo.png
 cp "$BACKGROUND_PATH" /usr/share/backgrounds/enipla_background.png
 chmod 644 /usr/share/icons/enipla_logo.png

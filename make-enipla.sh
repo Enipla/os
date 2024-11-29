@@ -38,6 +38,7 @@ echo "enipla" > /etc/hostname
 sed -i "s/127.0.1.1.*/127.0.1.1   enipla/g" /etc/hosts
 
 # Update and upgrade system
+export DEBIAN_FRONTEND=noninteractive
 apt-get update && apt-get dist-upgrade -y
 
 # Install Core System Tools and Utilities
@@ -92,3 +93,8 @@ rm -- "$0"
 EOF
 chmod +x "$FIRST_LOGIN_SCRIPT"
 echo "$FIRST_LOGIN_SCRIPT" >> /etc/skel/.bashrc
+
+# --- Done ---
+neofetch --ascii_distro Bedrock --config off --ascii_colors 2 4 6
+echo 'Welcome to $OS_NAME \"$RELEASE_NAME\"'
+echo "Enipla Ready!"

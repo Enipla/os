@@ -96,5 +96,4 @@ echo "$FIRST_LOGIN_SCRIPT" >> /etc/skel/.bashrc
 
 # --- Done ---
 neofetch --ascii_distro Bedrock --config off --ascii_colors 2 4 6
-echo 'Welcome to $OS_NAME \"$RELEASE_NAME\"'
 echo "Enipla Ready!"

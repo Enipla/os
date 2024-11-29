@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# Ensure script is run as root
+if [ "$EUID" -ne 0 ]; then
+    echo "Please run as root."
+    exit 1
+fi
+
 # Set key variables
 OS_NAME="Enipla"
 RELEASE_NAME="Begone"
@@ -7,24 +13,30 @@ RELEASE_NAME="Begone"
 # Get the directory where the script is located
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
-# Set the paths for the logo and background (relative to the script's location)
+# Set the paths for the logo and background
 LOGO_PATH="$SCRIPT_DIR/hd_enipla_logo_icon_transparent.png"
 BACKGROUND_PATH="$SCRIPT_DIR/enipla_background.png"
 
 # Path to first-login script
 FIRST_LOGIN_SCRIPT="/etc/enipla/first-login.sh"
 
-# --- Branding changes ---
+# --- Verify Required Files ---
+if [ ! -f "$LOGO_PATH" ]; then
+    echo "Error: Logo file $LOGO_PATH not found."
+    exit 1
+fi
 
-# Edit /etc/motd
+if [ ! -f "$BACKGROUND_PATH" ]; then
+    echo "Error: Background file $BACKGROUND_PATH not found."
+    exit 1
+fi
+
+# --- Branding changes ---
 echo "Welcome to Enipla \"Begone\" OS" > /etc/motd
 echo "" >> /etc/motd
 echo "An OS powered by hopes and dreams" >> /etc/motd
 
-# Edit /etc/issue
 sed -i "s/Debian GNU\/Linux/Enipla Begone/g" /etc/issue
-
-# Edit /etc/os-release
 sed -i "s/Debian GNU\\/Linux/Enipla Begone/g" /etc/os-release
 sed -i "s/PRETTY_NAME=\"Debian GNU\\/Linux/PRETTY_NAME=\"Enipla Begone/g" /etc/os-release
 sed -i "s/NAME=\"Debian GNU\\/Linux/NAME=\"Enipla Begone/g" /etc/os-release
@@ -33,75 +45,64 @@ sed -i "s/NAME=\"Debian GNU\\/Linux/NAME=\"Enipla Begone/g" /etc/os-release
 echo "enipla" > /etc/hostname
 hostnamectl set-hostname enipla
 
-# Update package lists
-apt-get update
+# Update system and upgrade
+apt-get update && apt-get dist-upgrade -y
 
-# Install Openbox, basic utilities, LightDM, and NeoFetch
-apt-get install -y openbox lightdm lightdm-gtk-greeter xterm pcmanfm tint2 neofetch
+# Install Openbox, LightDM, and utilities
+apt-get install -y openbox lightdm lightdm-gtk-greeter xterm pcmanfm tint2 neofetch feh xcompmgr firefox-esr vlc gedit
 
-# Install basic applications
-apt-get install -y firefox-esr vlc gedit
+# --- Copy logo and background to global locations ---
+cp "$LOGO_PATH" /usr/share/icons/enipla_logo.png
+cp "$BACKGROUND_PATH" /usr/share/backgrounds/enipla_background.png
+chmod 644 /usr/share/icons/enipla_logo.png
+chmod 644 /usr/share/backgrounds/enipla_background.png
 
-# --- LightDM Configuration ---
-# Set the background image
-sed -i "s|#background=.*|background=$BACKGROUND_PATH|g" /etc/lightdm/lightdm-gtk-greeter.conf
+# --- Configure LightDM ---
+sed -i "s|background=.*|background=/usr/share/backgrounds/enipla_background.png|g" /etc/lightdm/lightdm-gtk-greeter.conf
 
-# --- Openbox Configuration ---
-# Set up autostart for Openbox
+# --- Configure Openbox ---
 mkdir -p ~/.config/openbox
 cat > ~/.config/openbox/autostart <<EOL
-# Set wallpaper
-feh --bg-scale "$BACKGROUND_PATH" &
-
-# Start tint2 panel
+# Set wallpaper using feh
+feh --bg-scale "/usr/share/backgrounds/enipla_background.png" &
+# Start Tint2 panel
 tint2 &
-
-# Launch basic utilities
+# Launch file manager
 pcmanfm --desktop &
 EOL
+chmod +x ~/.config/openbox/autostart
 
-# Set the Openbox menu logo
+# --- Set the Openbox menu logo ---
 mkdir -p ~/.themes/enipla/
-cp "$LOGO_PATH" ~/.themes/enipla/logo.png
+ln -sf /usr/share/icons/enipla_logo.png ~/.themes/enipla/logo.png
 
 # --- Add a custom greeting with Neofetch ---
 echo "neofetch --ascii_distro Bedrock --config off --ascii_colors 2 4 6" >> ~/.bashrc
 echo "echo 'Welcome to $OS_NAME \"$RELEASE_NAME\"'" >> ~/.bashrc
 
 # --- First-Login Script Setup ---
-# Create a directory for the script
 mkdir -p /etc/enipla/
-
-# Create the first-login script
 cat > "$FIRST_LOGIN_SCRIPT" <<'EOF'
 #!/bin/bash
-
 # Install additional software
+apt-get update
 apt-get install -y flatpak abiword gnumeric sylpheed zathura mpv xmms mtpaint gftp leafpad zzzfm peazip
-
 # Install Flatpak apps
 flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
 flatpak install -y flathub com.brave.Browser
 flatpak install -y flathub app.drey.Warp
 flatpak install -y flathub org.kde.isoimagewriter
 flatpak install -y flathub com.valvesoftware.Steam
-
-# Perform additional setup steps (customize as needed)
-# For example, update all system packages
+# Perform additional updates
 apt-get upgrade -y
-
-# Cleanup tasks
 apt-get autoremove -y
-
 # Remove this script to ensure it runs only once
 rm -- "$0"
 EOF
-
-# Make the first-login script executable
 chmod +x "$FIRST_LOGIN_SCRIPT"
 
-# Set up first-login execution for new users
+# Append first-login script to new users' .bashrc
 echo "$FIRST_LOGIN_SCRIPT" >> /etc/skel/.bashrc
 
-# Restart LightDM to apply changes
+# --- Restart LightDM to apply changes ---
 systemctl restart lightdm

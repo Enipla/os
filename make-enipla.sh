@@ -43,7 +43,7 @@ sed -i "s/NAME=\"Debian GNU\\/Linux/NAME=\"Enipla Begone/g" /etc/os-release
 
 # Change hostname
 echo "enipla" > /etc/hostname
-hostnamectl set-hostname enipla
+sed -i "s/127.0.1.1.*/127.0.1.1   enipla/g" /etc/hosts
 
 # Update system and upgrade
 apt-get update && apt-get dist-upgrade -y
@@ -91,10 +91,10 @@ apt-get update
 apt-get install -y flatpak abiword gnumeric sylpheed zathura mpv xmms mtpaint gftp leafpad zzzfm peazip
 # Install Flatpak apps
 flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
-flatpak install -y flathub com.brave.Browser
-flatpak install -y flathub app.drey.Warp
-flatpak install -y flathub org.kde.isoimagewriter
-flatpak install -y flathub com.valvesoftware.Steam
+flatpak install --noninteractive -y flathub com.brave.Browser
+flatpak install --noninteractive -y flathub app.drey.Warp
+flatpak install --noninteractive -y flathub org.kde.isoimagewriter
+flatpak install --noninteractive -y flathub com.valvesoftware.Steam
 # Perform additional updates
 apt-get upgrade -y
 apt-get autoremove -y
@@ -106,5 +106,4 @@ chmod +x "$FIRST_LOGIN_SCRIPT"
 # Append first-login script to new users' .bashrc
 echo "$FIRST_LOGIN_SCRIPT" >> /etc/skel/.bashrc
 
-# --- Restart LightDM to apply changes ---
-systemctl restart lightdm
+# Note: Skipping systemctl restart lightdm as it's not supported in Cubic's environment

@@ -198,11 +198,12 @@ EOL
 plymouth-set-default-theme enipla -R
 
 # --- Configure GRUB Menu ---
-apt-get install -y grub-common || { echo "Grub installation failed"; exit 1; }
+apt-get install -y grub-common grub-efi-amd64 || { echo "Grub installation failed"; exit 1; }
 
 # Prepare GRUB configuration directory
 echo "Setting up GRUB..."
 
+mkdir -p /boot/efi
 mkdir -p /boot/grub/themes/enipla
 
 # Copy theme assets

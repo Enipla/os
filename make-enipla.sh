@@ -73,13 +73,10 @@ sudo apt update
 
 # Install LXDE, LightDM and Utilities
 apt-get install -y lxde lightdm lightdm-gtk-greeter xterm pcmanfm neofetch \
-    feh vlc gedit flatpak || { echo "Main Installation failed"; exit 1; }
+    feh vlc gedit flatpak || { echo "System Installation failed"; exit 1; }
 
 # Setup flatpak/flathub
 flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
-
-# Add LXDE themes
-sudo apt-get install -y arc-theme papirus-icon-theme || { echo "Extras Installation failed"; }
 
 # Setup enipla directory
 mkdir -p /etc/enipla/
@@ -98,19 +95,12 @@ cp "$BACKGROUND_PATH" /boot/grub/background.png
 LIGHTDM_CONFIG="/etc/lightdm/lightdm-gtk-greeter.conf"
 [ ! -f "$LIGHTDM_CONFIG" ] && echo "[greeter]" > "$LIGHTDM_CONFIG"
 sed -i "s|background=.*|background=/usr/share/backgrounds/enipla_background.png|g" "$LIGHTDM_CONFIG"
-echo "logo-path=/usr/share/icons/enipla_logo.png" >> "$LIGHTDM_CONFIG"
 
 # --- Configure LXDE ---
 mkdir -p /etc/skel/.config/lxsession/LXDE
 
 cat > /etc/skel/.config/lxsession/LXDE/autostart <<EOL
 @feh --bg-scale /usr/share/backgrounds/enipla_background.png
-EOL
-
-cat > /etc/skel/.config/lxsession/LXDE/desktop.conf <<EOL
-[Desktop]
-theme=Arc-Dark
-icon_theme=Papirus
 EOL
 
 # --- Add Neofetch to .bashrc ---

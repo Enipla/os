@@ -8,7 +8,7 @@ fi
 
 # Set key variables
 OS_NAME="Enipla"
-RELEASE_NAME="Bedrock"
+RELEASE_NAME="Begone"
 
 # Get the directory where the script is located
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"

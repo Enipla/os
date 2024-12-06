@@ -26,6 +26,32 @@ if [ ! -f "$LOGO_PATH" ] || [ ! -f "$BACKGROUND_PATH" ]; then
     exit 1
 fi
 
+# --- Branding changes ---
+echo "Changing branding..."
+echo "Welcome to Enipla \"Begone\" OS" > /etc/motd
+sed -i "s/Debian/Enipla Begone/g" /etc/issue
+sed -i "s/Debian/Enipla Begone/g" /etc/os-release
+sed -i "s/NAME=\"Debian/NAME=\"Enipla Begone/g" /etc/os-release
+sed -i "s/PRETTY_NAME=\"Debian/PRETTY_NAME=\"Enipla Begone/g" /etc/os-release
+
+# Change hostname
+echo "enipla" > /etc/hostname
+sed -i "s/127.0.1.1.*/127.0.1.1   enipla/g" /etc/hosts
+
+# Update and upgrade system
+export DEBIAN_FRONTEND=noninteractive
+apt-get update && apt-get dist-upgrade -y
+
+# Install Core System Tools and Utilities
+apt-get install -y openssh-server build-essential less unzip mtr-tiny etckeeper curl wget git fuse || { echo "Core Installation failed"; exit 1; }
+
+# Disable snapd
+echo "Package: snapd" | sudo tee /etc/apt/preferences.d/nosnap.pref
+echo "Pin: release a=*" | sudo tee -a /etc/apt/preferences.d/nosnap.pref
+echo "Pin-Priority: -1" | sudo tee -a /etc/apt/preferences.d/nosnap.pref
+
+sudo apt update
+
 # --- Determine CPU Architecture ---
 ARCH=$(uname -m)
 case $ARCH in
@@ -44,32 +70,6 @@ echo "Downloading and installing Bedrock Linux..."
 wget -O bedrock-installer.sh "$URL"
 chmod +x bedrock-installer.sh
 sh bedrock-installer.sh --hijack
-
-# --- Branding changes ---
-echo "Changing branding..."
-echo "Welcome to Enipla \"Begone\" OS" > /etc/motd
-sed -i "s/Debian/Enipla Begone/g" /etc/issue
-sed -i "s/Debian/Enipla Begone/g" /etc/os-release
-sed -i "s/NAME=\"Debian/NAME=\"Enipla Begone/g" /etc/os-release
-sed -i "s/PRETTY_NAME=\"Debian/PRETTY_NAME=\"Enipla Begone/g" /etc/os-release
-
-# Change hostname
-echo "enipla" > /etc/hostname
-sed -i "s/127.0.1.1.*/127.0.1.1   enipla/g" /etc/hosts
-
-# Update and upgrade system
-export DEBIAN_FRONTEND=noninteractive
-apt-get update && apt-get dist-upgrade -y
-
-# Install Core System Tools and Utilities
-apt-get install -y openssh-server build-essential less unzip mtr-tiny etckeeper || { echo "Core Installation failed"; exit 1; }
-
-# Disable snapd
-echo "Package: snapd" | sudo tee /etc/apt/preferences.d/nosnap.pref
-echo "Pin: release a=*" | sudo tee -a /etc/apt/preferences.d/nosnap.pref
-echo "Pin-Priority: -1" | sudo tee -a /etc/apt/preferences.d/nosnap.pref
-
-sudo apt update
 
 # Install LXDE, LightDM and Utilities
 apt-get install -y lxde lightdm lightdm-gtk-greeter xterm pcmanfm neofetch \

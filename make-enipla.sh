@@ -120,12 +120,52 @@ Window.SetBackgroundBottomColor (0, 0, 0);
 logo = Image.Add (0.5, 0.5, "/usr/share/icons/enipla_logo.png");
 Image.SetAnchorPoint (logo, 0.5, 0.5);
 
-spinner = Sprite.Add (0.5, 0.85, 0.1, 0.1, "/usr/share/icons/spinner.png");
-
 scale = 1.0;
 scaleDirection = 1;
 
+title = Text.Add (0.5, 0.1, "", 0.05);
+Text.SetAnchorPoint (title, 0.5, 0.5);
+Text.SetColor (title, 1, 1, 1);
+
+subtitle = Text.Add (0.5, 0.2, "", 0.03);
+Text.SetAnchorPoint (subtitle, 0.5, 0.5);
+Text.SetColor (subtitle, 0.8, 0.8, 0.8);
+
+dots = Text.Add (0.5, 0.85, ".", 0.03);
+Text.SetAnchorPoint (dots, 0.5, 0.5);
+Text.SetColor (dots, 1, 1, 1);
+
+operation = Splash.GetOperation ();  # Get the current Plymouth operation
+
+# Set messages based on the current operation
+if operation == "boot-up" then
+   Text.SetText (title, "Welcome to Enipla");
+   Text.SetText (subtitle, "Booting up...");
+elseif operation == "shutdown" then
+   Text.SetText (title, "Goodbye!");
+   Text.SetText (subtitle, "Shutting down...");
+elseif operation == "reboot" then
+   Text.SetText (title, "See you soon!");
+   Text.SetText (subtitle, "Rebooting...");
+elseif operation == "updates" then
+   Text.SetText (title, "Installing Updates...");
+   Text.SetText (subtitle, "Do not turn off your computer.");
+elseif operation == "system-upgrade" then
+   Text.SetText (title, "Upgrading System...");
+   Text.SetText (subtitle, "Do not turn off your computer.");
+elseif operation == "firmware-upgrade" then
+   Text.SetText (title, "Upgrading Firmware...");
+   Text.SetText (subtitle, "Do not turn off your computer.");
+else
+   Text.SetText (title, "Enipla OS");
+   Text.SetText (subtitle, "Processing...");
+end
+
+dotState = 0;
+
+# Animation loop
 while true
+   # Pulsating logo
    scale = scale + (scaleDirection * 0.005);
    if scale >= 1.1 then
       scaleDirection = -1;
@@ -134,17 +174,24 @@ while true
    end
    Image.SetScale (logo, scale, scale);
 
-   angle = Sprite.GetRotation (spinner);
-   angle = angle + 10;
-   if angle >= 360 then
-      angle = 0;
+   # Animated dots
+   dotState = dotState + 1;
+   if dotState > 3 then
+      dotState = 1;
    end
-   Sprite.SetRotation (spinner, angle);
+   if dotState == 1 then
+      Text.SetText (dots, ".");
+   elseif dotState == 2 then
+      Text.SetText (dots, "..");
+   elseif dotState == 3 then
+      Text.SetText (dots, "...");
+   end
 
    Window.Draw ();
-   Sleep (0.05);
+   Sleep (0.48);
 end
 EOL
+
 
 plymouth-set-default-theme enipla -R
 
@@ -157,6 +204,7 @@ title-color: "#FFFFFF"
 desktop-image: "/usr/share/backgrounds/enipla_background.png"
 EOL
 sed -i "s|^#*GRUB_THEME=.*|GRUB_THEME=/boot/grub/themes/enipla/theme.txt|g" /etc/default/grub
+sed -i "s|^#*GRUB_CMDLINE_LINUX=.*|GRUB_CMDLINE_LINUX=\"quiet splash\"|g" /etc/default/grub
 if command -v update-grub &> /dev/null; then
     update-grub
 else

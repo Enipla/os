@@ -17,9 +17,6 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 LOGO_PATH="$SCRIPT_DIR/hd_enipla_logo_icon_transparent.png"
 BACKGROUND_PATH="$SCRIPT_DIR/enipla_background.png"
 
-# Path to first-login script
-FIRST_LOGIN_SCRIPT="/etc/enipla/first-login.sh"
-
 # --- Verify Required Files ---
 if [ ! -f "$LOGO_PATH" ] || [ ! -f "$BACKGROUND_PATH" ]; then
     echo "Error: Logo or background file not found."
@@ -43,7 +40,7 @@ export DEBIAN_FRONTEND=noninteractive
 apt-get update && apt-get dist-upgrade -y
 
 # Install Core System Tools and Utilities
-apt-get install -y openssh-server build-essential less unzip mtr-tiny etckeeper curl wget git fuse || { echo "Core Installation failed"; exit 1; }
+apt-get install -y openssh-server build-essential less unzip mtr-tiny etckeeper curl wget git || { echo "Core Installation failed"; exit 1; }
 
 # Disable snapd
 echo "Package: snapd" | sudo tee /etc/apt/preferences.d/nosnap.pref
@@ -52,27 +49,8 @@ echo "Pin-Priority: -1" | sudo tee -a /etc/apt/preferences.d/nosnap.pref
 
 sudo apt update
 
-# --- Determine CPU Architecture ---
-ARCH=$(uname -m)
-case $ARCH in
-    x86_64) URL="https://github.com/bedrocklinux/bedrocklinux-userland/releases/download/0.7.30/bedrock-linux-0.7.30-x86_64.sh" ;;
-    i686) URL="https://github.com/bedrocklinux/bedrocklinux-userland/releases/download/0.7.30/bedrock-linux-0.7.30-i386.sh" ;;
-    armv7l) URL="https://github.com/bedrocklinux/bedrocklinux-userland/releases/download/0.7.30/bedrock-linux-0.7.30-armv7l.sh" ;;
-    aarch64) URL="https://github.com/bedrocklinux/bedrocklinux-userland/releases/download/0.7.30/bedrock-linux-0.7.30-aarch64.sh" ;;
-    *) 
-        echo "Unsupported architecture: $ARCH"
-        exit 1
-        ;;
-esac
-
-# --- Install Bedrock Linux ---
-echo "Downloading and installing Bedrock Linux..."
-wget -O bedrock-installer.sh "$URL"
-chmod +x bedrock-installer.sh
-sh bedrock-installer.sh --hijack
-
-# Install LXDE, LightDM and Utilities
-apt-get install -y lxde lightdm lightdm-gtk-greeter xterm pcmanfm neofetch \
+# Install LXQt, LightDM, and Utilities
+apt-get install -y lxqt lightdm lightdm-gtk-greeter qterminal pcmanfm-qt neofetch \
     feh vlc gedit flatpak || { echo "System Installation failed"; exit 1; }
 
 # Setup flatpak/flathub
@@ -87,31 +65,65 @@ cp "$LOGO_PATH" /usr/share/icons/enipla_logo.png
 cp "$BACKGROUND_PATH" /usr/share/backgrounds/enipla_background.png
 chmod 644 /usr/share/icons/enipla_logo.png /usr/share/backgrounds/enipla_background.png
 
-# Do grub background
-mkdir -p /boot/grub
-cp "$BACKGROUND_PATH" /boot/grub/background.png
-
 # --- Configure LightDM ---
 LIGHTDM_CONFIG="/etc/lightdm/lightdm-gtk-greeter.conf"
 [ ! -f "$LIGHTDM_CONFIG" ] && echo "[greeter]" > "$LIGHTDM_CONFIG"
 sed -i "s|background=.*|background=/usr/share/backgrounds/enipla_background.png|g" "$LIGHTDM_CONFIG"
 
-# --- Configure LXDE ---
-mkdir -p /etc/skel/.config/lxsession/LXDE
+# --- Configure LXQt ---
+mkdir -p /etc/skel/.config/lxqt
 
-cat > /etc/skel/.config/lxsession/LXDE/autostart <<EOL
-@feh --bg-scale /usr/share/backgrounds/enipla_background.png
+cat > /etc/skel/.config/lxqt/session.conf <<EOL
+[General]
+lastConfiguredDesktop=/usr/share/backgrounds/enipla_background.png
+theme=default
+EOL
+
+# --- Set Default Applications ---
+cat >> /etc/skel/.config/lxqt/session.conf <<EOL
+[Default Applications]
+filemanager=pcmanfm-qt
+terminal=qterminal
+webbrowser=brave
 EOL
 
 # --- Add Neofetch to .bashrc ---
-if ! grep -q "$FIRST_LOGIN_SCRIPT" /etc/skel/.bashrc; then
+if ! grep -q "neofetch" /etc/skel/.bashrc; then
     echo "neofetch --ascii_distro Bedrock --config off --ascii_colors 2 4 6" >> /etc/skel/.bashrc
     echo "echo 'Welcome to $OS_NAME \"$RELEASE_NAME\"'" >> /etc/skel/.bashrc
 fi
 
-# Cleanup
-echo "Echo cleaning up..."
-rm bedrock-installer.sh || { echo "Cleanup failed"; }
+# --- Configure Boot Splash ---
+apt-get install -y plymouth plymouth-themes || { echo "Plymouth installation failed"; }
+mkdir -p /usr/share/plymouth/themes/enipla
+cat > /usr/share/plymouth/themes/enipla/enipla.plymouth <<EOL
+[Plymouth Theme]
+Name=Enipla
+Description=Custom boot splash for Enipla
+ModuleName=script
+EOL
+cat > /usr/share/plymouth/themes/enipla/enipla.script <<EOL
+Window.SetBackgroundTopColor (0.15, 0.15, 0.15);
+Window.SetBackgroundBottomColor (0.10, 0.10, 0.10);
+Image.Add (0, 0, "/usr/share/icons/enipla_logo.png");
+EOL
+plymouth-set-default-theme enipla -R
+
+# --- Configure GRUB Menu ---
+apt install grub-common -y || { echo "Grub common installation failed"; }
+
+mkdir -p /boot/grub/themes/enipla
+cat > /boot/grub/themes/enipla/theme.txt <<EOL
+title-font: "DejaVuSans-Bold"
+title-color: "#FFFFFF"
+desktop-image: "/usr/share/backgrounds/enipla_background.png"
+EOL
+sed -i "s|^#*GRUB_THEME=.*|GRUB_THEME=/boot/grub/themes/enipla/theme.txt|g" /etc/default/grub
+if command -v update-grub &> /dev/null; then
+    update-grub
+else
+    grub-mkconfig -o /boot/grub/grub.cfg
+fi
 
 # --- Done ---
 neofetch --ascii_distro Bedrock --config off --ascii_colors 2 4 6

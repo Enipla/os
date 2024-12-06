@@ -47,11 +47,18 @@ echo "Package: snapd" | sudo tee /etc/apt/preferences.d/nosnap.pref
 echo "Pin: release a=*" | sudo tee -a /etc/apt/preferences.d/nosnap.pref
 echo "Pin-Priority: -1" | sudo tee -a /etc/apt/preferences.d/nosnap.pref
 
+# Add Brave browser
+sudo curl -fsSLo /usr/share/keyrings/brave-browser-archive-keyring.gpg https://brave-browser-apt-release.s3.brave.com/brave-browser-archive-keyring.gpg
+echo "deb [signed-by=/usr/share/keyrings/brave-browser-archive-keyring.gpg] https://brave-browser-apt-release.s3.brave.com/ stable main" | sudo tee /etc/apt/sources.list.d/brave-browser-release.list
+
 sudo apt update
 
 # Install LXQt, LightDM, and Utilities
 apt-get install -y lxqt lightdm lightdm-gtk-greeter qterminal pcmanfm-qt neofetch \
-    feh vlc gedit flatpak || { echo "System Installation failed"; exit 1; }
+    feh vlc gedit flatpak brave-browser || { echo "System Installation failed"; exit 1; }
+
+# LXQt extras
+apt-get install -y lximage-qt lxqt-sudo lxqt-about lxqt-theme || { echo "LXQt tools/packages installation failed"; exit 1; }
 
 # Setup flatpak/flathub
 flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
@@ -76,7 +83,7 @@ mkdir -p /etc/skel/.config/lxqt
 cat > /etc/skel/.config/lxqt/session.conf <<EOL
 [General]
 lastConfiguredDesktop=/usr/share/backgrounds/enipla_background.png
-theme=default
+theme=frost
 EOL
 
 # --- Set Default Applications ---
@@ -93,25 +100,56 @@ if ! grep -q "neofetch" /etc/skel/.bashrc; then
     echo "echo 'Welcome to $OS_NAME \"$RELEASE_NAME\"'" >> /etc/skel/.bashrc
 fi
 
-# --- Configure Boot Splash ---
+# --- Configure Plymouth Theme ---
 apt-get install -y plymouth plymouth-themes || { echo "Plymouth installation failed"; }
 mkdir -p /usr/share/plymouth/themes/enipla
+
+# Define Plymouth theme configuration
 cat > /usr/share/plymouth/themes/enipla/enipla.plymouth <<EOL
 [Plymouth Theme]
 Name=Enipla
-Description=Custom boot splash for Enipla
+Description=EniplaOS
 ModuleName=script
 EOL
+
+# Define Plymouth animation script
 cat > /usr/share/plymouth/themes/enipla/enipla.script <<EOL
-Window.SetBackgroundTopColor (0.15, 0.15, 0.15);
-Window.SetBackgroundBottomColor (0.10, 0.10, 0.10);
-Image.Add (0, 0, "/usr/share/icons/enipla_logo.png");
+Window.SetBackgroundTopColor (0, 0, 0);
+Window.SetBackgroundBottomColor (0, 0, 0);
+
+logo = Image.Add (0.5, 0.5, "/usr/share/icons/enipla_logo.png");
+Image.SetAnchorPoint (logo, 0.5, 0.5);
+
+spinner = Sprite.Add (0.5, 0.85, 0.1, 0.1, "/usr/share/icons/spinner.png");
+
+scale = 1.0;
+scaleDirection = 1;
+
+while true
+   scale = scale + (scaleDirection * 0.005);
+   if scale >= 1.1 then
+      scaleDirection = -1;
+   elseif scale <= 0.9 then
+      scaleDirection = 1;
+   end
+   Image.SetScale (logo, scale, scale);
+
+   angle = Sprite.GetRotation (spinner);
+   angle = angle + 10;
+   if angle >= 360 then
+      angle = 0;
+   end
+   Sprite.SetRotation (spinner, angle);
+
+   Window.Draw ();
+   Sleep (0.05);
+end
 EOL
+
 plymouth-set-default-theme enipla -R
 
 # --- Configure GRUB Menu ---
 apt install grub-common -y || { echo "Grub common installation failed"; }
-
 mkdir -p /boot/grub/themes/enipla
 cat > /boot/grub/themes/enipla/theme.txt <<EOL
 title-font: "DejaVuSans-Bold"
@@ -124,6 +162,12 @@ if command -v update-grub &> /dev/null; then
 else
     grub-mkconfig -o /boot/grub/grub.cfg
 fi
+
+# --- Cleanup ---
+echo "Cleaning up..."
+apt-get autoremove -y
+apt-get clean
+rm -rf /var/lib/apt/lists/*
 
 # --- Done ---
 neofetch --ascii_distro Bedrock --config off --ascii_colors 2 4 6

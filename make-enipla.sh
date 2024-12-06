@@ -62,12 +62,21 @@ export DEBIAN_FRONTEND=noninteractive
 apt-get update && apt-get dist-upgrade -y
 
 # Install Core System Tools and Utilities
-apt-get install -y openssh-server sudo screen iproute resolvconf \
-    build-essential vim nano less unzip mtr-tiny curl etckeeper
+apt-get install -y openssh-server build-essential less unzip mtr-tiny etckeeper
+
+# Disable snapd
+echo "Package: snapd" | sudo tee /etc/apt/preferences.d/nosnap.pref
+echo "Pin: release a=*" | sudo tee -a /etc/apt/preferences.d/nosnap.pref
+echo "Pin-Priority: -1" | sudo tee -a /etc/apt/preferences.d/nosnap.pref
+
+sudo apt update
 
 # Install Openbox, LightDM and Utilities
 apt-get install -y openbox lightdm lightdm-gtk-greeter xterm pcmanfm tint2 neofetch \
-    feh xcompmgr vlc gedit
+    feh xcompmgr vlc gedit flatpak
+
+# Setup flatpak/flathub
+flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 
 # --- Copy logo and background to global locations ---
 mkdir -p /usr/share/backgrounds /usr/share/icons
@@ -97,22 +106,7 @@ if ! grep -q "$FIRST_LOGIN_SCRIPT" /etc/skel/.bashrc; then
     echo "echo 'Welcome to $OS_NAME \"$RELEASE_NAME\"'" >> /etc/skel/.bashrc
 fi
 
-# --- First-Login Script Setup ---
 mkdir -p /etc/enipla/
-cat > "$FIRST_LOGIN_SCRIPT" <<'EOF'
-#!/bin/bash
-apt-get update
-apt-get install -y flatpak abiword gnumeric sylpheed zathura mpv xmms mtpaint gftp \
-    leafpad zzzfm peazip
-flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
-flatpak install --noninteractive -y flathub com.brave.Browser app.drey.Warp \
-    org.kde.isoimagewriter com.valvesoftware.Steam
-apt-get upgrade -y
-apt-get autoremove -y
-rm -- "$0"
-EOF
-chmod +x "$FIRST_LOGIN_SCRIPT"
-echo "$FIRST_LOGIN_SCRIPT" >> /etc/skel/.bashrc
 
 # --- Done ---
 neofetch --ascii_distro Bedrock --config off --ascii_colors 2 4 6

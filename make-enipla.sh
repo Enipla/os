@@ -101,6 +101,8 @@ if ! grep -q "neofetch" /etc/skel/.bashrc; then
 fi
 
 # --- Configure Plymouth Theme ---
+echo "Setting up plymouth..."
+
 apt-get install -y plymouth plymouth-themes || { echo "Plymouth installation failed"; }
 mkdir -p /usr/share/plymouth/themes/enipla
 
@@ -196,58 +198,42 @@ EOL
 plymouth-set-default-theme enipla -R
 
 # --- Configure GRUB Menu ---
+apt-get install -y grub-common || { echo "Grub installation failed"; exit 1; }
 
-# Install GRUB
-apt install grub-common -y || { echo "Grub installation failed"; exit 1; }
+# Prepare GRUB configuration directory
+echo "Setting up GRUB..."
 
-# Prepare directories
-mkdir -p /etc/default /boot/grub/themes/enipla
+mkdir -p /boot/grub/themes/enipla
 
-# Create /etc/default/grub configuration
-sudo bash -c 'cat > /etc/default/grub <<EOL
-GRUB_DEFAULT=0
-GRUB_TIMEOUT=5
-GRUB_DISTRIBUTOR=`lsb_release -i -s 2> /dev/null || echo Debian`
-GRUB_CMDLINE_LINUX_DEFAULT="quiet splash"
-GRUB_CMDLINE_LINUX=""
-GRUB_THEME=/boot/grub/themes/enipla/theme.txt
-EOL'
+# Copy theme assets
+if [ -f "$BACKGROUND_PATH" ]; then
+    cp "$BACKGROUND_PATH" /boot/grub/themes/enipla/background.png
+fi
 
-# Create GRUB theme file
-cat > /boot/grub/themes/enipla/theme.txt <<EOL
-title-font: "DejaVuSans-Bold"
-title-color: "#FFFFFF"
-desktop-image: "/usr/share/backgrounds/enipla_background.png"
-EOL
+# Create the GRUB configuration file
+cat > /boot/grub/grub.cfg <<EOL
+set default=0
+set timeout=5
 
-# Update GRUB configuration file
-sed -i "s|^#*GRUB_THEME=.*|GRUB_THEME=/boot/grub/themes/enipla/theme.txt|g" /etc/default/grub
-sed -i "s|^#*GRUB_CMDLINE_LINUX=.*|GRUB_CMDLINE_LINUX=\"quiet splash\"|g" /etc/default/grub
+background_image /boot/grub/themes/enipla/background.png
 
-# --- Create and Mount Fake File System for GRUB ---
-mkdir -p /mnt/dev /mnt/proc /mnt/sys /mnt/fake
-
-mount --bind /dev /mnt/dev || { echo "Failed to bind /dev"; exit 1; }
-mount --bind /proc /mnt/proc || { echo "Failed to bind /proc"; exit 1; }
-mount --bind /sys /mnt/sys || { echo "Failed to bind /sys"; exit 1; }
-mount --bind /mnt/fake /boot || { echo "Failed to bind /mnt/fake to /boot"; exit 1; }
-
-# --- Trap for Cleanup ---
-cleanup() {
-    echo "Performing cleanup..."
-    umount /mnt/dev || echo "Failed to unmount /mnt/dev"
-    umount /mnt/proc || echo "Failed to unmount /mnt/proc"
-    umount /mnt/sys || echo "Failed to unmount /mnt/sys"
-    umount /mnt/fake || echo "Failed to unmount /mnt/fake"
-    echo "Cleanup complete."
+menuentry "${OS_NAME} ${RELEASE_NAME}" {
+    set root=(hd0,1)    # Adjust this to the correct disk and partition
+    linux $KERNEL_PATH root=/dev/sda1 quiet splash
+    initrd $INITRD_PATH
 }
 
-# Trap EXIT, ERR, or INT signals
-trap cleanup EXIT ERR INT
+menuentry "${OS_NAME} ${RELEASE_NAME} (Recovery Mode)" {
+    set root=(hd0,1)    # Adjust this to the correct disk and partition
+    linux $KERNEL_PATH root=/dev/sda1 single
+    initrd $INITRD_PATH
+}
+EOL
 
-# --- Generate GRUB Configuration ---
-echo "Processing GRUB..."
-grub-mkconfig -o /boot/grub/grub.cfg || { echo "Failed to generate GRUB configuration"; exit 1; }
+# Ensure GRUB is properly installed
+grub-install --target=i386-pc /dev/sda || \
+grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=GRUB || \
+{ echo "Failed to install GRUB"; exit 1; }
 
 # --- Cleanup Apt Cache ---
 echo "Cleaning up apt cache..."

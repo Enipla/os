@@ -58,7 +58,7 @@ apt-get install -y lxqt lightdm lightdm-gtk-greeter qterminal pcmanfm-qt neofetc
     feh vlc gedit flatpak brave-browser || { echo "System Installation failed"; exit 1; }
 
 # LXQt extras
-apt-get install -y lximage-qt lxqt-sudo lxqt-about lxqt-theme || { echo "LXQt tools/packages installation failed"; exit 1; }
+apt-get install -y lximage-qt lxqt-sudo lxqt-about lxqt-themes || { echo "LXQt tools/packages installation failed"; exit 1; }
 
 # Setup flatpak/flathub
 flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo

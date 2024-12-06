@@ -26,12 +26,32 @@ if [ ! -f "$LOGO_PATH" ] || [ ! -f "$BACKGROUND_PATH" ]; then
     exit 1
 fi
 
+# --- Determine CPU Architecture ---
+ARCH=$(uname -m)
+case $ARCH in
+    x86_64) URL="https://github.com/bedrocklinux/bedrocklinux-userland/releases/download/0.7.30/bedrock-linux-0.7.30-x86_64.sh" ;;
+    i686) URL="https://github.com/bedrocklinux/bedrocklinux-userland/releases/download/0.7.30/bedrock-linux-0.7.30-i386.sh" ;;
+    armv7l) URL="https://github.com/bedrocklinux/bedrocklinux-userland/releases/download/0.7.30/bedrock-linux-0.7.30-armv7l.sh" ;;
+    aarch64) URL="https://github.com/bedrocklinux/bedrocklinux-userland/releases/download/0.7.30/bedrock-linux-0.7.30-aarch64.sh" ;;
+    *) 
+        echo "Unsupported architecture: $ARCH"
+        exit 1
+        ;;
+esac
+
+# --- Install Bedrock Linux ---
+echo "Downloading and installing Bedrock Linux..."
+wget -O bedrock-installer.sh "$URL"
+chmod +x bedrock-installer.sh
+sh bedrock-installer.sh --hijack
+
 # --- Branding changes ---
+echo "Changing branding..."
 echo "Welcome to Enipla \"Begone\" OS" > /etc/motd
-sed -i "s/Ubuntu/Enipla Begone/g" /etc/issue
-sed -i "s/Ubuntu/Enipla Begone/g" /etc/os-release
-sed -i "s/NAME=\"Ubuntu/NAME=\"Enipla Begone/g" /etc/os-release
-sed -i "s/PRETTY_NAME=\"Ubuntu/PRETTY_NAME=\"Enipla Begone/g" /etc/os-release
+sed -i "s/Debian/Enipla Begone/g" /etc/issue
+sed -i "s/Debian/Enipla Begone/g" /etc/os-release
+sed -i "s/NAME=\"Debian/NAME=\"Enipla Begone/g" /etc/os-release
+sed -i "s/PRETTY_NAME=\"Debian/PRETTY_NAME=\"Enipla Begone/g" /etc/os-release
 
 # Change hostname
 echo "enipla" > /etc/hostname

@@ -196,23 +196,61 @@ EOL
 plymouth-set-default-theme enipla -R
 
 # --- Configure GRUB Menu ---
-apt install grub-common -y || { echo "Grub common installation failed"; }
-mkdir -p /boot/grub/themes/enipla
+
+# Install GRUB
+apt install grub-common -y || { echo "Grub installation failed"; exit 1; }
+
+# Prepare directories
+mkdir -p /etc/default /boot/grub/themes/enipla
+
+# Create /etc/default/grub configuration
+sudo bash -c 'cat > /etc/default/grub <<EOL
+GRUB_DEFAULT=0
+GRUB_TIMEOUT=5
+GRUB_DISTRIBUTOR=`lsb_release -i -s 2> /dev/null || echo Debian`
+GRUB_CMDLINE_LINUX_DEFAULT="quiet splash"
+GRUB_CMDLINE_LINUX=""
+GRUB_THEME=/boot/grub/themes/enipla/theme.txt
+EOL'
+
+# Create GRUB theme file
 cat > /boot/grub/themes/enipla/theme.txt <<EOL
 title-font: "DejaVuSans-Bold"
 title-color: "#FFFFFF"
 desktop-image: "/usr/share/backgrounds/enipla_background.png"
 EOL
+
+# Update GRUB configuration file
 sed -i "s|^#*GRUB_THEME=.*|GRUB_THEME=/boot/grub/themes/enipla/theme.txt|g" /etc/default/grub
 sed -i "s|^#*GRUB_CMDLINE_LINUX=.*|GRUB_CMDLINE_LINUX=\"quiet splash\"|g" /etc/default/grub
-if command -v update-grub &> /dev/null; then
-    update-grub
-else
-    grub-mkconfig -o /boot/grub/grub.cfg
-fi
 
-# --- Cleanup ---
-echo "Cleaning up..."
+# --- Create and Mount Fake File System for GRUB ---
+mkdir -p /mnt/fake
+
+mount --bind /dev /mnt/dev || { echo "Failed to bind /dev"; exit 1; }
+mount --bind /proc /mnt/proc || { echo "Failed to bind /proc"; exit 1; }
+mount --bind /sys /mnt/sys || { echo "Failed to bind /sys"; exit 1; }
+mount --bind /mnt/fake /boot || { echo "Failed to bind /mnt/fake to /boot"; exit 1; }
+
+# --- Trap for Cleanup ---
+cleanup() {
+    echo "Performing cleanup..."
+    umount /mnt/dev || echo "Failed to unmount /mnt/dev"
+    umount /mnt/proc || echo "Failed to unmount /mnt/proc"
+    umount /mnt/sys || echo "Failed to unmount /mnt/sys"
+    umount /mnt/fake || echo "Failed to unmount /mnt/fake"
+    echo "Cleanup complete."
+}
+
+# Trap EXIT, ERR, or INT signals
+trap cleanup EXIT ERR INT
+
+# --- Generate GRUB Configuration ---
+echo "Processing GRUB..."
+grub-mkconfig -o /boot/grub/grub.cfg || { echo "Failed to generate GRUB configuration"; exit 1; }
+
+# --- Cleanup Apt Cache ---
+echo "Cleaning up apt cache..."
 apt-get autoremove -y
 apt-get clean
 rm -rf /var/lib/apt/lists/*

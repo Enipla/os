@@ -225,7 +225,7 @@ sed -i "s|^#*GRUB_THEME=.*|GRUB_THEME=/boot/grub/themes/enipla/theme.txt|g" /etc
 sed -i "s|^#*GRUB_CMDLINE_LINUX=.*|GRUB_CMDLINE_LINUX=\"quiet splash\"|g" /etc/default/grub
 
 # --- Create and Mount Fake File System for GRUB ---
-mkdir -p /mnt/fake
+mkdir -p /mnt/dev /mnt/proc /mnt/sys /mnt/fake
 
 mount --bind /dev /mnt/dev || { echo "Failed to bind /dev"; exit 1; }
 mount --bind /proc /mnt/proc || { echo "Failed to bind /proc"; exit 1; }

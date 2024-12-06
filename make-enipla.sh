@@ -88,7 +88,7 @@ cp "$BACKGROUND_PATH" /usr/share/backgrounds/enipla_background.png
 chmod 644 /usr/share/icons/enipla_logo.png /usr/share/backgrounds/enipla_background.png
 
 # Do grub background
-mkdir /boot/grub
+mkdir -p /boot/grub
 cp "$BACKGROUND_PATH" /boot/grub/background.png
 
 # --- Configure LightDM ---

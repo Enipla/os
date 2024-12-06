@@ -197,61 +197,13 @@ EOL
 
 plymouth-set-default-theme enipla -R
 
-# --- Configure GRUB Menu ---
-apt-get install -y grub-common || { echo "Grub installation failed"; exit 1; }
-
-# Prepare GRUB configuration directory
-echo "Setting up GRUB..."
-
-mkdir -p /boot/efi
+# --- GRUB configs ---
+mkdir -p /boot/grub/themes/enipla/
 
 # Copy theme assets
 if [ -f "$BACKGROUND_PATH" ]; then
     cp "$BACKGROUND_PATH" /boot/grub/themes/enipla/background.png
 fi
-
-# Create the GRUB configuration file
-GRUB_DIR="/boot/grub"
-EFI_DIR="/boot/efi/EFI/BOOT"
-KERNEL_PATH="/boot/vmlinuz"
-INITRD_PATH="/boot/initrd.img"
-DISK_PART="(hd0,1)"
-ROOT_PART="/dev/sda1"
-
-# Create GRUB configuration
-echo "Creating GRUB configuration..."
-mkdir -p $GRUB_DIR
-cat > $GRUB_DIR/grub.cfg <<EOL
-set default=0
-set timeout=5
-
-background_image /boot/grub/themes/enipla/background.png
-
-menuentry "Enipla OS" {
-    set root=$DISK_PART
-    linux $KERNEL_PATH root=$ROOT_PART quiet splash
-    initrd $INITRD_PATH
-}
-
-menuentry "Enipla OS (Recovery Mode)" {
-    set root=$DISK_PART
-    linux $KERNEL_PATH root=$ROOT_PART single
-    initrd $INITRD_PATH
-}
-EOL
-
-# BIOS GRUB setup
-echo "Setting up GRUB for BIOS..."
-mkdir -p $GRUB_DIR/i386-pc
-cp /usr/lib/grub/i386-pc/* $GRUB_DIR/i386-pc/
-
-# UEFI GRUB setup
-echo "Setting up GRUB for UEFI..."
-mkdir -p $EFI_DIR
-cp /usr/lib/grub/x86_64-efi/* $EFI_DIR/
-cp /usr/lib/shim/shimx64.efi $EFI_DIR/bootx64.efi
-
-echo "GRUB setup complete."
 
 # --- Cleanup Apt Cache ---
 echo "Cleaning up apt cache..."
